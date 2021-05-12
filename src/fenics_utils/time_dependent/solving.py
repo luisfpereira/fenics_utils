@@ -1,7 +1,7 @@
 from abc import ABCMeta
 from abc import abstractmethod
+import warnings
 
-# TODO: merge functions
 
 def solve_time_dependent(u_n, u, solver, dt, file, timer, stop_criterion):
 
@@ -87,6 +87,8 @@ class StopByExtremaDiff(Criterion):
         u_vec = u.vector()
         diff = u_vec.max() - u_vec.min()
         if diff <= self.min_max_diff or it == self.max_iters:
+            if it == self.max_iters:
+                warnings.warn('Maximum iterations reached')
             return True
 
         return False
