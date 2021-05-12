@@ -8,24 +8,18 @@ from dolfin.cpp.math import near
 
 from dolfin.function.functionspace import FunctionSpace
 from dolfin.function.expression import Expression
-from dolfin.function.argument import TrialFunction
-from dolfin.function.argument import TestFunction
 from dolfin.function.constant import Constant
 from dolfin.function.function import Function
 
 from dolfin.fem.dirichletbc import DirichletBC
 
-from ufl import dot
-from ufl import dx
-from ufl import grad
+from fenics_utils.formulation.heat import get_formulation_constant_props
 
 
-# TODO: add material parameters to all the functions
-
-
-def set_heat_dirichlet_constant(mesh, dt, var_name='Temperature',
-                                bc_temperature=1300., temperature=300.,
-                                source_value=0., axis=1, face='max', tol=1e-4):
+def set_linear_dirichlet_constant(mesh, dt, var_name='Temperature',
+                                  bc_temperature=1300., temperature=300.,
+                                  source_value=0., axis=1, face='max', tol=1e-4,
+                                  conductivity=1., density=1., specific_heat=1.):
     '''
     Heat equation problem where an edge/surface is set at a given temperature
     and everything else at another.
@@ -58,20 +52,19 @@ def set_heat_dirichlet_constant(mesh, dt, var_name='Temperature',
     u_n.interpolate(u_initial)
 
     # problem formulation
-    u_h = TrialFunction(V)
-    v = TestFunction(V)
     f = Constant(source_value)
-
-    a = u_h * v * dx + dt * dot(grad(u_h), grad(v)) * dx
-    L = (u_n + dt * f) * v * dx
+    u_n, a, L = get_formulation_constant_props(
+        V, u_initial, f, dt, conductivity, density, specific_heat,
+        var_name=var_name)
 
     u = Function(V, name=var_name)
 
     return u_n, a, L, u, bcs
 
 
-def set_heat_equal_opposite(mesh, dt, var_name='Temperature', axis=0,
-                            bc_temperature=300., source_value=0.):
+def set_linear_equal_opposite(mesh, dt, var_name='Temperature', axis=0,
+                              bc_temperature=300., source_value=0.,
+                              conductivity=1., density=1., specific_heat=1.):
     '''
     Heat equation problem where two opposite edges/faces are set at the same
     temperature and the points in between follow a quadratic variation.
@@ -105,16 +98,11 @@ def set_heat_equal_opposite(mesh, dt, var_name='Temperature', axis=0,
     u_initial = Expression('param * (x[axis] - c) * (x[axis] - c)',
                            degree=2, param=param, c=c, name='T', axis=axis)
 
-    u_n = Function(V, name=var_name)
-    u_n.interpolate(u_initial)
-
     # problem formulation
-    u_h = TrialFunction(V)
-    v = TestFunction(V)
     f = Constant(source_value)
-
-    a = u_h * v * dx + dt * dot(grad(u_h), grad(v)) * dx
-    L = (u_n + dt * f) * v * dx
+    u_n, a, L = get_formulation_constant_props(
+        V, u_initial, f, dt, conductivity, density, specific_heat,
+        var_name=var_name)
 
     u = Function(V, name=var_name)
 
@@ -131,4 +119,4 @@ def set_heat_eq_2d(dt, n=8):
     # mesh
     mesh = UnitSquareMesh(n, n)
 
-    return set_heat_equal_opposite(mesh, dt, var_name=var_name)
+    return set_linear_equal_opposite(mesh, dt, var_name=var_name)
