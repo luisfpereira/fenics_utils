@@ -38,7 +38,7 @@ def load_last_checkpoint(xdmf_filename, V, var_name):
         u = Function(V, name=var_name)
         file.read_checkpoint(u, var_name, -1)
 
-    return u, times[-1]
+    return u, times[-1], len(times) - 1
 
 
 def get_times_from_xdfm_checkpoints(xdmf_filename):
