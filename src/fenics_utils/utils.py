@@ -53,6 +53,7 @@ def get_times_from_xdfm_checkpoints(xdmf_filename):
 
 class OutputsWriter(metaclass=ABCMeta):
     # TODO: extend to non-time dependent cases (although less critical)
+    # TODO: should file be an attribute of this?
 
     @abstractmethod
     def write(self, u, t):
