@@ -1,3 +1,5 @@
+from abc import ABCMeta
+from abc import abstractmethod
 from lxml import etree
 
 from dolfin.cpp.io import File
@@ -47,3 +49,32 @@ def get_times_from_xdfm_checkpoints(xdmf_filename):
     time_objs = tree.findall('.//Time')
 
     return [float(time_obj.get('Value')) for time_obj in time_objs]
+
+
+class OutputsWriter(metaclass=ABCMeta):
+    # TODO: extend to non-time dependent cases (although less critical)
+
+    @abstractmethod
+    def write(self, u, t):
+        pass
+
+
+class VTKWriter(OutputsWriter):
+
+    def __init__(self, file):
+        self.file = file
+
+    def write(self, u, t):
+        self.file << (u, t)
+
+
+class XDMFCheckpointWriter(OutputsWriter):
+
+    def __init__(self, file, append_first=False):
+        self.file = file
+        self._append = append_first  # after first append becomes True
+
+    def write(self, u, t):
+        self.file.write_checkpoint(u, u.name(), t, XDMFFile.Encoding.HDF5,
+                                   append=self._append)
+        self._append = True

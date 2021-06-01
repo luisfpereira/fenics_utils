@@ -3,14 +3,14 @@ from abc import abstractmethod
 import warnings
 
 
-def solve_time_dependent(u_n, u, solver, dt, file, timer, stop_criterion):
+def solve_time_dependent(u_n, u, solver, dt, outputs_writer, timer,
+                         stop_criterion):
 
-    # TODO: need to abstract file type
     # TODO: return solution?
     # TODO: update objects which expression change with time (user has to tell?)
 
     t = 0
-    file << (u_n, t)
+    outputs_writer.write(u_n, t)
     timer.start()
 
     it = 0
@@ -26,7 +26,7 @@ def solve_time_dependent(u_n, u, solver, dt, file, timer, stop_criterion):
         solver.solve()
 
         # save to vtk file
-        file << (u, t)
+        outputs_writer.write(u, t)
 
         # update previous solution
         u_n.assign(u)
