@@ -14,6 +14,15 @@ def solve_time_dependent(u_n, u, solver, dt, outputs_writer, timer,
     timer.start()
 
     it = 0
+    _loop_time_dependent(it, t, u_n, u, solver, dt, outputs_writer, timer,
+                         stop_criterion)
+
+    timer.stop()
+
+
+def _loop_time_dependent(it, t, u_n, u, solver, dt, outputs_writer, timer,
+                         stop_criterion):
+
     while True:
         timer.start_iter()
 
@@ -37,8 +46,6 @@ def solve_time_dependent(u_n, u, solver, dt, outputs_writer, timer,
 
         if stop:
             break
-
-    timer.stop()
 
 
 class Criterion(metaclass=ABCMeta):
