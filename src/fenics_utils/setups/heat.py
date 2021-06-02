@@ -64,7 +64,8 @@ def set_linear_dirichlet_constant(mesh, dt, var_name='Temperature',
 
 def set_linear_equal_opposite(mesh, dt, var_name='Temperature', axis=0,
                               bc_temperature=300., source_value=0.,
-                              conductivity=1., density=1., specific_heat=1.):
+                              conductivity=1., density=1., specific_heat=1.,
+                              V=None):
     '''
     Heat equation problem where two opposite edges/faces are set at the same
     temperature and the points in between follow a quadratic variation.
@@ -76,7 +77,8 @@ def set_linear_equal_opposite(mesh, dt, var_name='Temperature', axis=0,
     '''
 
     # function space
-    V = FunctionSpace(mesh, 'Lagrange', 1)
+    if V is None:
+        V = FunctionSpace(mesh, 'Lagrange', 1)
 
     # boundary conditions
     mesh_coords = mesh.coordinates()
