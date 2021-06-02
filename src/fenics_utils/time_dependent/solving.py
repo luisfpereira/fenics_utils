@@ -33,7 +33,6 @@ def solve_time_dependent_with_restart(xdmf_filename, V, var_name,
     Notes:
         When it returns True, it means the simulation is finalized.
     '''
-    # TODO: timer should be passed
 
     is_restart = os.path.exists(xdmf_filename)
 
@@ -175,7 +174,16 @@ class StopByRuntime(Criterion):
 
 
 class StopCleverlyByRuntime(Criterion):
-    pass
+
+    def __init__(self, max_runtime, last_iter_time=None, safety_coeff=1.):
+        self.max_runtime = max_runtime
+        self.last_iter_time = last_iter_time
+        self.safety_coeff = safety_coeff
+        self._start_time = time.perf_counter()
+
+    def check(self, **kwargs):
+        # TODO: conthere
+        pass
 
 
 class StopByItersOrRuntime(CompositeCriteria):
@@ -188,6 +196,6 @@ class StopByItersOrRuntime(CompositeCriteria):
         super().__init__([stop_by_iter, stop_by_runtime])
 
 
-class StopCleverlyByItersOrRuntime:
+class StopByItersOrCleverRuntime:
     # TODO: make it intelligent
     pass
