@@ -2,6 +2,7 @@ from abc import ABCMeta
 from abc import abstractmethod
 from lxml import etree
 
+from dolfin import MPI
 from dolfin.cpp.io import File
 from dolfin.cpp.io import XDMFFile
 from dolfin.function.function import Function
@@ -29,12 +30,13 @@ def convert_xdmf_checkpoints_to_vtk(xdmf_filename, V, var_name,
 
 
 def load_last_checkpoint(xdmf_filename, V, var_name):
+    # TODO: file should be passed in order to open only once?
 
     # get times
     times = get_times_from_xdfm_checkpoints(xdmf_filename)
 
     # load last checkpoint
-    with XDMFFile(xdmf_filename) as file:
+    with XDMFFile(MPI.comm_self, xdmf_filename) as file:
         u = Function(V, name=var_name)
         file.read_checkpoint(u, var_name, -1)
 

@@ -4,6 +4,7 @@ from abc import abstractmethod
 import warnings
 import time
 
+from dolfin import MPI
 from dolfin.cpp.io import XDMFFile
 
 from fenics_utils.utils import load_last_checkpoint
@@ -36,7 +37,7 @@ def solve_time_dependent_with_restart(xdmf_filename, V, var_name,
 
     is_restart = os.path.exists(xdmf_filename)
 
-    with XDMFFile(xdmf_filename) as file:
+    with XDMFFile(MPI.comm_self, xdmf_filename) as file:
         outputs_writer = XDMFCheckpointWriter(file, append_first=is_restart)
 
         if is_restart:
