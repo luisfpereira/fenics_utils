@@ -1,6 +1,6 @@
 from abc import ABCMeta
 from abc import abstractmethod
-from lxml import etree
+import xml.etree.cElementTree as etree
 
 from dolfin import MPI
 from dolfin.cpp.io import File
