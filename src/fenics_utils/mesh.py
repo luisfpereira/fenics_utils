@@ -7,6 +7,9 @@ from pyhip.commands.operations import hip_exit
 import meshio
 
 from dolfin.cpp.mesh import Mesh
+from dolfin.cpp.generation import UnitIntervalMesh
+from dolfin.cpp.generation import UnitSquareMesh
+from dolfin.cpp.generation import UnitCubeMesh
 
 
 def get_dolfin_mesh_from_hdf5(mesh_filename):
@@ -36,3 +39,17 @@ def convert_hdf5_to_dolfin_mesh(mesh_filename):
     meshio_mesh.write(dolfin_filename)
 
     return dolfin_filename
+
+
+def create_unit_hypercube(*args):
+    '''Creates a unit mesh with dimensions given by the number of inputs.
+
+    Args:
+        n (int): number of cells. An input by dimension.
+
+    Notes:
+        Based on Langtangen's book.
+    '''
+
+    mesh_obj = [UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]
+    return mesh_obj[len(args) - 1](*args)
