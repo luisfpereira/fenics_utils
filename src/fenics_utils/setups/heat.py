@@ -4,21 +4,21 @@ are used to develop and test code.
 '''
 
 from dolfin.cpp.generation import UnitSquareMesh
-from dolfin.cpp.math import near
 
 from dolfin.function.functionspace import FunctionSpace
 from dolfin.function.expression import Expression
 from dolfin.function.constant import Constant
 from dolfin.function.function import Function
 
-from dolfin.fem.dirichletbc import DirichletBC
-
+from fenics_utils.mesh import get_mesh_axis_lims
+from fenics_utils.bcs import set_dirichlet_bc
+from fenics_utils.bcs import set_dirichlet_bc_lim
 from fenics_utils.formulation.heat import get_formulation_constant_props
 
 
 def set_linear_dirichlet_constant(mesh, dt, var_name='Temperature',
                                   bc_temperature=1300., temperature=300.,
-                                  source_value=0., axis=1, face='max', tol=1e-4,
+                                  source_value=0., axis=1, right=True, tol=1e-4,
                                   conductivity=1., density=1., specific_heat=1.):
     '''
     Heat equation problem where an edge/surface is set at a given temperature
@@ -28,23 +28,17 @@ def set_linear_dirichlet_constant(mesh, dt, var_name='Temperature',
     ----------
     axis : int
         Controls boundary to which Dirichlet bc is applied.
-    face : str
+    right : bool
         Dirichlet bc is applied to the planar and perpendicular face found in
-        the max ('max') or min ('min') coordinate.
+        the max (True) or min (False) coordinate.
     '''
 
     # function space
     V = FunctionSpace(mesh, 'Lagrange', 1)
 
-    # boundary conditions (only upper hole has Dirichlet bc)
-    mesh_coords = mesh.coordinates()
-    x_bc = mesh_coords[:, axis].max() if face == 'max' else mesh_coords[:, axis].min()
-    u_xbc = Constant(bc_temperature)
-
-    def boundary_x(x, on_boundary):
-        return on_boundary and near(x[axis], x_bc, tol)
-
-    bcs = [DirichletBC(V, u_xbc, boundary_x)]
+    # boundary conditions
+    bcs = [set_dirichlet_bc_lim(V, value=bc_temperature, axis=axis, right=right,
+                                tol=tol)]
 
     # initial condition
     u_initial = Constant(temperature)
@@ -81,22 +75,12 @@ def set_linear_equal_opposite(mesh, dt, var_name='Temperature', axis=0,
         V = FunctionSpace(mesh, 'Lagrange', 1)
 
     # boundary conditions
-    mesh_coords = mesh.coordinates()
-    x_min, x_max = mesh_coords[:, axis].min(), mesh_coords[:, axis].max()
-    u_xmin, u_xmax = Constant(bc_temperature), Constant(bc_temperature)
-
-    def boundary_xmin(x, on_boundary):
-        return on_boundary and near(x[axis], x_min)
-
-    def boundary_xmax(x, on_boundary):
-        return on_boundary and near(x[axis], x_max)
-
-    bcs = [DirichletBC(V, u_xmin, boundary_xmin),
-           DirichletBC(V, u_xmax, boundary_xmax)]
+    x_min, x_max = get_mesh_axis_lims(mesh, axis)
+    bcs = [set_dirichlet_bc(V, x, bc_temperature, axis) for x in [x_min, x_max]]
 
     # initial condition
     c = (x_max - x_min) / 2
-    param = u_xmin.values()[0] / (c**2)
+    param = bc_temperature / (c**2)
     u_initial = Expression('param * (x[axis] - c) * (x[axis] - c)',
                            degree=2, param=param, c=c, name='T', axis=axis)
 
@@ -115,6 +99,7 @@ def set_heat_eq_2d(dt, n=8):
     '''
     Basic example where only the mesh refinement is controlled.
     '''
+    # TODO extend with hypercube
 
     var_name = 'Temperature'
 
