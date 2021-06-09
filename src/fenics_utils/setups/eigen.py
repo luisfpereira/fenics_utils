@@ -1,37 +1,33 @@
 '''Defines simple eigenproblems (with very low flexibility) that are used to
 test and develop code'''
 
-from dolfin.function.functionspace import FunctionSpace
-from dolfin.function.argument import TrialFunction
-from dolfin.function.argument import TestFunction
-
-from ufl import dot
-from ufl import grad
-from ufl import dx
+from dolfin.cpp.la import PETScMatrix
+from dolfin.fem.assembling import SystemAssembler
 
 from fenics_utils.mesh import create_unit_hypercube
+from fenics_utils.formulation.eigen import formulate_laplacian
 
 
-def set_basic(mesh, V=None):
-    return _formulate_basic(mesh, V)
+def set_free_unit_hypercube(n, V=None):
+
+    mesh = create_unit_hypercube(n)
+
+    V, a, b, dummy = formulate_laplacian(mesh, V)
+    A, B = _assemble_eigen(a, b, dummy)
+
+    return V, A, B
 
 
-def set_basic_unit_hypercube(n, V=None):
-    '''
-    Args:
-        n (array-like)
-    '''
-    return _formulate_basic(create_unit_hypercube(*n), V)
+def _assemble_eigen(a, b, dummy, bcs=None):
+    A = _assemble_system(a, dummy, bcs)
+    B = _assemble_system(b, dummy, bcs)
+
+    return A, B
 
 
-def _formulate_basic(mesh, V=None):
+def _assemble_system(a, L, bcs=None):
+    asm = SystemAssembler(a, L, bcs)
+    A = PETScMatrix()
+    asm.assemble(A)
 
-    if V is None:
-        V = FunctionSpace(mesh, 'CG', 1)
-
-    u_h = TrialFunction(V)
-    v = TestFunction(V)
-
-    a = dot(grad(u_h), grad(v)) * dx
-
-    return a
+    return A
