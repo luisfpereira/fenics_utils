@@ -41,15 +41,15 @@ def convert_hdf5_to_dolfin_mesh(mesh_filename):
     return dolfin_filename
 
 
-def create_unit_hypercube(*args):
+def create_unit_hypercube(n):
     '''Creates a unit mesh with dimensions given by the number of inputs.
 
     Args:
-        n (int): number of cells. An input by dimension.
+        n (array-like of int): number of cells.
 
     Notes:
         Based on Langtangen's book.
     '''
 
     mesh_obj = [UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]
-    return mesh_obj[len(args) - 1](*args)
+    return mesh_obj[len(n) - 1](*n)
