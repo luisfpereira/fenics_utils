@@ -6,7 +6,9 @@ from dolfin.fem.assembling import SystemAssembler
 from dolfin.fem.assembling import assemble
 
 from fenics_utils.mesh import create_unit_hypercube
+from fenics_utils.mesh import create_hypercube
 from fenics_utils.bcs import set_dirichlet_bcs_lims_all
+from fenics_utils.bcs import set_dirichlet_bcs_lims
 from fenics_utils.formulation.eigen import formulate_laplacian
 
 
@@ -20,6 +22,18 @@ def set_fixed_unit_hypercube(n, V=None, diag_value=1e6):
     mesh = create_unit_hypercube(n)
 
     return set_generic(mesh, V, diag_value, set_dirichlet_bcs_lims_all, value=0.)
+
+
+def set_eloi_case(N, dims=[0.2, 0.1, 1.0], axis=2):
+    '''Box mesh fixed in zlims (or other if axis is passed).
+
+    References:
+        [1]: https://cerfacs.fr/coop/fenics-helmholtz
+    '''
+    n = [int(N * dim) for dim in dims]
+    mesh = create_hypercube(n, dims)
+
+    return set_generic(mesh, bcs_fnc=set_dirichlet_bcs_lims, axis=axis)
 
 
 def set_generic(mesh, V=None, diag_value=1e6, bcs_fnc=None, **kwargs):
