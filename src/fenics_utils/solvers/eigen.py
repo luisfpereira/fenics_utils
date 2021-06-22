@@ -1,4 +1,5 @@
-import scipy
+from scipy import sparse
+from scipy.sparse import linalg
 
 from dolfin.cpp.la import SLEPcEigenSolver
 
@@ -27,7 +28,7 @@ class ScipySparseEigenSolver:
     Solves generalized eigenproblem for symmetric matrices.
 
     Notes:
-        Looks to emulate behavior of SLEPcEigenSolver (goal is to use both 
+        Looks to emulate behavior of SLEPcEigenSolver (goal is to use both \
     indistinctively).
     '''
 
@@ -44,8 +45,8 @@ class ScipySparseEigenSolver:
         return {'which': map_dict[self.params['spectrum']]}
 
     def _get_scipy_sparse(self, M):
-        return scipy.sparse.csr_matrix(M.mat().getValuesCSR()[::-1])
+        return sparse.csr_matrix(M.mat().getValuesCSR()[::-1])
 
     def solve(self, n_eig=5):
-        return scipy.sparse.linalg.eigsh(self.A, M=self.B, k=n_eig,
-                                         **self._map_spectrum())
+        return linalg.eigsh(self.A, M=self.B, k=n_eig,
+                            **self._map_spectrum())
