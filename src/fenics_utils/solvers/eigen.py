@@ -7,9 +7,8 @@ from dolfin.cpp.la import SLEPcEigenSolver
 
 class MySLEPcEigenSolver(SLEPcEigenSolver):
 
-    def __init__(self, A, B, bcs=None, alpha=1e6, solver='krylov-schur',
+    def __init__(self, A, B, solver='krylov-schur',
                  spectrum='smallest magnitude', problem_type='gen_hermitian'):
-        # TODO: deal with bcs
 
         super().__init__(A, B)
         self.parameters['solver'] = solver
@@ -31,8 +30,7 @@ class ScipySparseEigenSolver:
     indistinctively).
     '''
 
-    def __init__(self, A, B, bcs=None, alpha=1e6, spectrum='smallest magnitude'):
-        # TODO: deal with bcs and alpha
+    def __init__(self, A, B, spectrum='smallest magnitude'):
         self.A = self._get_scipy_sparse(A)
         self.B = self._get_scipy_sparse(B)
         self.params = {'spectrum': spectrum}
