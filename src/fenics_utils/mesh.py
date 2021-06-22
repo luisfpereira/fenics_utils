@@ -2,6 +2,11 @@
 from dolfin.cpp.generation import UnitIntervalMesh
 from dolfin.cpp.generation import UnitSquareMesh
 from dolfin.cpp.generation import UnitCubeMesh
+from dolfin.cpp.generation import IntervalMesh
+from dolfin.cpp.generation import RectangleMesh
+from dolfin.cpp.generation import BoxMesh
+
+from dolfin.cpp.geometry import Point
 
 
 def create_unit_hypercube(n):
@@ -16,6 +21,19 @@ def create_unit_hypercube(n):
 
     mesh_obj = [UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]
     return mesh_obj[len(n) - 1](*n)
+
+
+def create_hypercube(n, dimensions):
+    d = len(n)
+    if d == 1:
+        mesh = IntervalMesh(n[0], 0., dimensions[0])
+    else:
+        origin = Point([0.] * d)
+        point = Point(dimensions)
+        mesh_obj = [RectangleMesh, BoxMesh]
+        mesh = mesh_obj[d - 2](origin, point, *n)
+
+    return mesh
 
 
 def get_mesh_axes_lims(mesh):
