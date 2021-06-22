@@ -1,9 +1,8 @@
+import numpy as np
 from scipy import sparse
 from scipy.sparse import linalg
 
 from dolfin.cpp.la import SLEPcEigenSolver
-
-from fenics_utils.solvers.utils import collect_SLEPc_eigenpairs
 
 
 class MySLEPcEigenSolver(SLEPcEigenSolver):
@@ -50,3 +49,16 @@ class ScipySparseEigenSolver:
     def solve(self, n_eig=5):
         return linalg.eigsh(self.A, M=self.B, k=n_eig,
                             **self._map_spectrum())
+
+
+def collect_SLEPc_eigenpairs(solver):
+    '''Returns only real part.
+    '''
+
+    w, v = [], []
+    for i in range(solver.get_number_converged()):
+        r, _, rv, _ = solver.get_eigenpair(i)
+        w.append(r)
+        v.append(rv)
+
+    return np.array(w), np.array(v).T
