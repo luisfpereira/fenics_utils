@@ -8,6 +8,10 @@ from dolfin.cpp.generation import BoxMesh
 
 from dolfin.cpp.geometry import Point
 
+from mshr.cpp import Rectangle
+from mshr.cpp import Circle
+from mshr import generate_mesh
+
 
 def create_unit_hypercube(n):
     '''Creates a unit mesh with dimensions given by the number of inputs.
@@ -34,6 +38,15 @@ def create_hypercube(n, dimensions):
         mesh = mesh_obj[d - 2](origin, point, *n)
 
     return mesh
+
+
+def create_rectangle_with_cylinder(point1, point2, cyl_center, cyl_radius,
+                                   n_cells=64):
+    channel = Rectangle(Point(point1), Point(point2))
+    cylinder = Circle(Point(cyl_center), cyl_radius)
+    domain = channel - cylinder
+
+    return generate_mesh(domain, n_cells)
 
 
 def get_mesh_axes_lims(mesh):
