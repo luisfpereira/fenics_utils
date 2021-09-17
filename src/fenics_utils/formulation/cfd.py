@@ -1,7 +1,6 @@
 from dolfin.function.function import Function
 from dolfin.function.argument import TrialFunction
 from dolfin.function.argument import TestFunction
-from dolfin.function.constant import Constant
 from dolfin.function.specialfunctions import FacetNormal
 
 from ufl import sym
@@ -47,12 +46,14 @@ class IncompressibleNsIpcs:
                  p_name='Pressure'):
         self.V = V
         self.Q = Q
+        self.dt = dt
+        self.mu = mu
+        self.rho = rho
         self.u_name = u_name
         self.p_name = p_name
         self.f = f
 
         self._define_functions()
-        self._define_constants(dt, mu, rho)
         self._define_aux_variables(V.mesh())
 
     def _define_functions(self):
@@ -69,11 +70,6 @@ class IncompressibleNsIpcs:
         self.p_n = Function(self.Q, name=self.p_name)
         self.p = Function(self.Q, name=self.p_name)
 
-    def _define_constants(self, dt, mu, rho):
-        self.k = Constant(dt)
-        self.mu = Constant(mu)
-        self.rho = Constant(rho)
-
     def _define_aux_variables(self, mesh):
         self.U = 0.5 * (self.u_n + self.u_h)
         self.n = FacetNormal(mesh)
@@ -84,7 +80,7 @@ class IncompressibleNsIpcs:
     def formulate_step1(self):
         """Defines variational problem for step 1 (tentative velocity).
         """
-        F = self.rho * dot((self.u_h - self.u_n) / self.k, self.v) * dx + \
+        F = self.rho * dot((self.u_h - self.u_n) / self.dt, self.v) * dx + \
             self.rho * dot(dot(self.u_n, nabla_grad(self.u_n)), self.v) * dx \
             + inner(sigma(self.U, self.p_n, self.mu), epsilon(self.v)) * dx \
             + dot(self.p_n * self.n, self.v) * ds \
@@ -99,7 +95,7 @@ class IncompressibleNsIpcs:
         """Defines variational problem for step 2 (pressure with tentative velocity).
         """
         a = dot(nabla_grad(self.p_h), nabla_grad(self.q)) * dx
-        L = dot(nabla_grad(self.p_n), nabla_grad(self.q)) * dx - (1 / self.k) * div(self.u) * self.q * dx
+        L = dot(nabla_grad(self.p_n), nabla_grad(self.q)) * dx - (1 / self.dt) * div(self.u) * self.q * dx
 
         return a, L
 
@@ -107,7 +103,7 @@ class IncompressibleNsIpcs:
         """Defines variational problem for step 3 (velocity).
         """
         a = dot(self.u_h, self.v) * dx
-        L = dot(self.u, self.v) * dx - self.k * dot(nabla_grad(self.p - self.p_n), self.v) * dx
+        L = dot(self.u, self.v) * dx - self.dt * dot(nabla_grad(self.p - self.p_n), self.v) * dx
 
         return a, L
 
@@ -125,11 +121,12 @@ class AdvectionDiffusionScalar:
     def __init__(self, D, dt, eps, u, f, c_name='Concentration'):
         self.D = D
         self.c_name = c_name
+        self.dt = dt
+        self.eps = eps
         self.u = u
         self.f = f
 
         self._define_functions()
-        self._define_constants(dt, eps)
 
     def _define_functions(self):
 
@@ -141,20 +138,13 @@ class AdvectionDiffusionScalar:
         self.c = Function(self.D, name=self.c_name)
         self.c_n = Function(self.D, name=self.c_name)
 
-    def _define_constants(self, dt, eps):
-        self.k = Constant(dt)
-        self.eps = Constant(eps)
-
     def get_functions(self):
         return self.c, self.c_n
 
     def formulate(self):
-        a = self.c_h / self.k * self.d * dx \
+        a = self.c_h / self.dt * self.d * dx \
             + dot(self.u, grad(self.c_h)) * self.d * dx \
             + self.eps * dot(grad(self.c_h), grad(self.d)) * dx
-        L = self.f * self.d * dx + self.c_n / self.k * self.d * dx
+        L = self.f * self.d * dx + self.c_n / self.dt * self.d * dx
 
         return a, L
-
-
-# TODO: NS+Advection-Diffusion via composition
