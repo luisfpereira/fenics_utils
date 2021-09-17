@@ -14,6 +14,7 @@ from ufl import lhs
 from ufl import rhs
 from ufl import ds
 from ufl import div
+from ufl import grad
 
 
 def epsilon(u):
@@ -111,5 +112,49 @@ class IncompressibleNsIpcs:
         return a, L
 
 
-# TODO: Advection-Diffusion (without NS)
-# TODO: NS+Advection-Diffusion
+class AdvectionDiffusionScalar:
+    """Advection-diffusion scalar equation [1]_.
+
+    Args:
+        D: Concentration function space.
+
+    References:
+        .. [1] `A system of advection–diffusion–reaction equations <A system of advection–diffusion–reaction equations>`_.
+    """
+
+    def __init__(self, D, dt, eps, u, f, c_name='Concentration'):
+        self.D = D
+        self.c_name = c_name
+        self.u = u
+        self.f = f
+
+        self._define_functions()
+        self._define_constants(dt, eps)
+
+    def _define_functions(self):
+
+        # trial and test functions
+        self.c_h = TrialFunction(self.D)
+        self.d = TestFunction(self.D)
+
+        # functions for solution at previous and current time steps
+        self.c = Function(self.D, name=self.c_name)
+        self.c_n = Function(self.D, name=self.c_name)
+
+    def _define_constants(self, dt, eps):
+        self.k = Constant(dt)
+        self.eps = Constant(eps)
+
+    def get_functions(self):
+        return self.c, self.c_n
+
+    def formulate(self):
+        a = self.c_h / self.k * self.d * dx \
+            + dot(self.u, grad(self.c_h)) * self.d * dx \
+            + self.eps * dot(grad(self.c_h), grad(self.d)) * dx
+        L = self.f * self.d * dx + self.c_n / self.k * self.d * dx
+
+        return a, L
+
+
+# TODO: NS+Advection-Diffusion via composition
