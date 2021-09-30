@@ -3,11 +3,12 @@ from dolfin.cpp.fem import LinearVariationalSolver
 
 from fenics_utils.formulation.cfd import IncompressibleNsIpcs
 from fenics_utils.formulation.cfd import AdvectionDiffusionScalar
+from fenics_utils.solvers.linear import LinearSolver
 
 
 class AdvectionDiffusionScalarNS:
 
-    def __init__(self, V, Q, D, dt, mu, rho, f_ns, eps, f_ad, bcu, bcp, bcc=None,
+    def __init__(self, V, Q, D, dt, mu, rho, f_ns, eps, f_ad, bcu, bcp, bcc=(),
                  solvers_parameters=None):
         self.V = V
         self.Q = Q
@@ -35,6 +36,29 @@ class AdvectionDiffusionScalarNS:
 
     def set(self):
 
+        (a1, L1), (a2, L2), (a3, L3), (a4, L4) = self.set_eqs()
+        u, _, p, _ = self.ns_formulation.get_functions()
+        c, _ = self.ad_formulation.get_functions()
+
+        solvers = [
+            LinearSolver(a1, L1, u, self.bcu),
+            LinearSolver(a2, L2, p, self.bcp),
+            LinearSolver(a3, L3, u, None),
+        ]
+        problem_ad = LinearVariationalProblem(a4, L4, c, self.bcc)
+        solvers.append(LinearVariationalSolver(problem_ad))
+
+        # update solver parameters
+        for solver, solver_parameters in zip(solvers, self.solvers_parameters):
+            solver.parameters.update(solver_parameters)
+
+        return solvers
+
+    def set_eqs(self):
+        """Set equations for all the variational problems.
+
+        Useful if the user wants only the equations.
+        """
         # NS formulation
         self.ns_formulation = IncompressibleNsIpcs(self.V, self.Q, self.dt,
                                                    self.mu, self.rho, self.f_ns)
@@ -42,28 +66,14 @@ class AdvectionDiffusionScalarNS:
         a1, L1 = self.ns_formulation.formulate_step1()
         a2, L2 = self.ns_formulation.formulate_step2()
         a3, L3 = self.ns_formulation.formulate_step3()
-
         u, _, p, _ = self.ns_formulation.get_functions()
 
         # advection-diffusion formulation
         self.ad_formulation = AdvectionDiffusionScalar(self.D, self.dt, self.eps, u,
                                                        self.f_ad)
-        a, L = self.ad_formulation.formulate()
-        c, _ = self.ad_formulation.get_functions()
+        a4, L4 = self.ad_formulation.formulate()
 
-        # define problems
-        problems = [LinearVariationalProblem(a1, L1, u, self.bcu),
-                    LinearVariationalProblem(a2, L2, p, self.bcp),
-                    LinearVariationalProblem(a3, L3, u),
-                    LinearVariationalProblem(a, L, c, self.bcc)]
-
-        # define solvers
-        solvers = []
-        for problem, solver_parameters in zip(problems, self.solvers_parameters):
-            solvers.append(LinearVariationalSolver(problem))
-            solvers[-1].parameters.update(solver_parameters)
-
-        return solvers
+        return [(a1, L1), (a2, L2), (a3, L3), (a4, L4)]
 
     def get_functions(self):
         if self.ns_formulation is None or self.ad_formulation is None:
