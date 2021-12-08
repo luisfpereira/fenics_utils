@@ -10,7 +10,7 @@ from dolfin.function.expression import Expression
 from dolfin.function.constant import Constant
 from dolfin.function.function import Function
 
-from fenics_utils.mesh import get_mesh_axis_lims
+from fenics_utils.mesh.utils import get_mesh_axis_lims
 from fenics_utils.bcs import set_dirichlet_bc
 from fenics_utils.bcs import set_dirichlet_bc_lim
 from fenics_utils.formulation.heat import get_formulation_constant_props

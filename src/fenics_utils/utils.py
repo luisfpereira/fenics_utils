@@ -48,7 +48,7 @@ def get_times_from_xdfm_checkpoints(xdmf_filename):
     with open(xdmf_filename, 'r') as file:
         tree = etree.parse(file)
 
-    time_objs = tree.findall('.//Time')
+    time_objs = tree.findall('.//Time')  # TODO: check with several variables
 
     return [float(time_obj.get('Value')) for time_obj in time_objs]
 
