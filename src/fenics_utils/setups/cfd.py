@@ -8,12 +8,12 @@ from fenics_utils.solvers.linear import LinearSolver
 
 class AdvectionDiffusionScalarNS:
 
-    def __init__(self, V, Q, D, dt, mu, rho, f_ns, eps, f_ad, bcu, bcp, bcc=(),
-                 solvers_parameters=None):
+    def __init__(self, V, Q, D, dt_ns, mu, rho, f_ns, eps, f_ad, bcu, bcp,
+                 bcc=(), solvers_parameters=None, dt_ad=None):
         self.V = V
         self.Q = Q
         self.D = D
-        self.dt = dt
+        self.dt_ns = dt_ns
         self.mu = mu
         self.rho = rho
         self.f_ns = f_ns
@@ -23,6 +23,7 @@ class AdvectionDiffusionScalarNS:
         self.bcp = bcp
         self.bcc = bcc
         self.solvers_parameters = solvers_parameters or self._set_default_solvers_parameters()
+        self.dt_ad = dt_ad if dt_ad is not None else dt_ns
 
         # initialize empty variables
         self.ns_formulation = None
@@ -60,7 +61,7 @@ class AdvectionDiffusionScalarNS:
         Useful if the user wants only the equations.
         """
         # NS formulation
-        self.ns_formulation = IncompressibleNsIpcs(self.V, self.Q, self.dt,
+        self.ns_formulation = IncompressibleNsIpcs(self.V, self.Q, self.dt_ns,
                                                    self.mu, self.rho, self.f_ns)
 
         a1, L1 = self.ns_formulation.formulate_step1()
@@ -69,8 +70,8 @@ class AdvectionDiffusionScalarNS:
         u, _, p, _ = self.ns_formulation.get_functions()
 
         # advection-diffusion formulation
-        self.ad_formulation = AdvectionDiffusionScalar(self.D, self.dt, self.eps, u,
-                                                       self.f_ad)
+        self.ad_formulation = AdvectionDiffusionScalar(self.D, self.dt_ad,
+                                                       self.eps, u, self.f_ad)
         a4, L4 = self.ad_formulation.formulate()
 
         return [(a1, L1), (a2, L2), (a3, L3), (a4, L4)]
