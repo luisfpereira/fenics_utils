@@ -1,9 +1,10 @@
-'''Defines simple eigenproblems (with very low flexibility) that are used to
-test and develop code'''
+"""Defines simple eigenproblems (with very low flexibility) that are used to
+test and develop code"""
 
 from dolfin.cpp.la import PETScMatrix
 from dolfin.fem.assembling import SystemAssembler
 from dolfin.fem.assembling import assemble
+from dolfin.function.functionspace import FunctionSpace
 
 from fenics_utils.mesh import create_unit_hypercube
 from fenics_utils.mesh import create_hypercube
@@ -25,24 +26,28 @@ def set_fixed_unit_hypercube(n, V=None, diag_value=1e6):
 
 
 def set_eloi_case(N, dims=[0.2, 0.1, 1.0], axis=2):
-    '''Box mesh fixed in zlims (or other if axis is passed).
+    """Box mesh fixed in zlims (or other if axis is passed).
 
     References:
         [1]: https://cerfacs.fr/coop/fenics-helmholtz
-    '''
+    """
     n = [int(N * dim) for dim in dims]
     mesh = create_hypercube(n, dims)
 
-    return set_generic(mesh, bcs_fnc=set_dirichlet_bcs_lims, axis=axis)
+    V = FunctionSpace(mesh, 'P', 1)
+
+    A, B = set_generic(V, bcs_fnc=set_dirichlet_bcs_lims, axis=axis)
+
+    return V, A, B
 
 
-def set_generic(mesh, V=None, diag_value=1e6, bcs_fnc=None, **kwargs):
-    '''
+def set_generic(V, diag_value=1e6, bcs_fnc=None, **kwargs):
+    """
     Args:
         bcs_fnc (callable): first argument must be V.
         kwargs: passed to bcs_fnc.
-    '''
-    V, a, b, dummy = formulate_laplacian(mesh, V)
+    """
+    a, b, dummy = formulate_laplacian(V)
 
     # bcs
     bcs = bcs_fnc(V, **kwargs) if callable(bcs_fnc) else None
@@ -50,7 +55,7 @@ def set_generic(mesh, V=None, diag_value=1e6, bcs_fnc=None, **kwargs):
     # assemble
     A, B = _assemble_eigen(a, b, dummy, bcs, diag_value)
 
-    return V, A, B
+    return A, B
 
 
 def _assemble_eigen(a, b, dummy, bcs=None, diag_value=1e6):
@@ -78,6 +83,8 @@ def _assemble_system_control_diag(a, dummy, bcs, diag_value):
 
     for bc in bcs:
         bc.zero(A)
+
+        # TODO: it does not work in parallel
         bc.zero_columns(A, dummy_vec, diag_value)
 
     return A
