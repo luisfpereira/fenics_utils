@@ -13,16 +13,20 @@ from fenics_utils.bcs import set_dirichlet_bcs_lims
 from fenics_utils.formulation.eigen import formulate_laplacian
 
 
-def set_free_unit_hypercube(n, V=None):
+def set_free_unit_hypercube(n):
     mesh = create_unit_hypercube(n)
+    V = FunctionSpace(mesh, 'P', 1)
+    A, B = set_generic(V, bcs_fnc=None, value=0)
 
-    return set_generic(mesh, V, bcs_fnc=None, value=0)
+    return V, A, B
 
 
-def set_fixed_unit_hypercube(n, V=None, diag_value=1e6):
+def set_fixed_unit_hypercube(n, diag_value=1e6):
     mesh = create_unit_hypercube(n)
+    V = FunctionSpace(mesh, 'P', 1)
+    A, B = set_generic(V, diag_value, set_dirichlet_bcs_lims_all, value=0.)
 
-    return set_generic(mesh, V, diag_value, set_dirichlet_bcs_lims_all, value=0.)
+    return V, A, B
 
 
 def set_eloi_case(N, dims=[0.2, 0.1, 1.0], axis=2):
@@ -47,44 +51,48 @@ def set_generic(V, diag_value=1e6, bcs_fnc=None, **kwargs):
         bcs_fnc (callable): first argument must be V.
         kwargs: passed to bcs_fnc.
     """
+
+    # TODO: avoid use of dummy?
     a, b, dummy = formulate_laplacian(V)
 
     # bcs
     bcs = bcs_fnc(V, **kwargs) if callable(bcs_fnc) else None
 
     # assemble
-    A, B = _assemble_eigen(a, b, dummy, bcs, diag_value)
+    A, B = _assemble_eigen(V, a, b, dummy, bcs, diag_value)
 
     return A, B
 
 
-def _assemble_eigen(a, b, dummy, bcs=None, diag_value=1e6):
+def _assemble_eigen(V, a, b, dummy, bcs=None, diag_value=1e6):
     if bcs is None:
-        A = _assemble_system(a, dummy)
+        A = _assemble_system(V, a, dummy)
     else:
-        A = _assemble_system_control_diag(a, dummy, bcs, diag_value)
-    B = _assemble_system(b, dummy, bcs)
+        A = _assemble_system_control_diag(V, a, bcs, diag_value)
+    B = _assemble_system(V, b, dummy, bcs)
 
     return A, B
 
 
-def _assemble_system(a, L, bcs=None):
+def _assemble_system(V, a, L, bcs=None):
+
     asm = SystemAssembler(a, L, bcs)
-    A = PETScMatrix()
+    A = PETScMatrix(V.mesh().mpi_comm())
     asm.assemble(A)
 
     return A
 
 
-def _assemble_system_control_diag(a, dummy, bcs, diag_value):
-    A = PETScMatrix()
+def _assemble_system_control_diag(V, a, bcs, diag_value):
+    A = PETScMatrix(V.mesh().mpi_comm())
     assemble(a, tensor=A)
-    dummy_vec = assemble(dummy)
 
+    # get bc_dofs
+    bc_dofs = []
     for bc in bcs:
-        bc.zero(A)
+        bc_dofs.extend(list(bc.get_boundary_values().keys()))
 
-        # TODO: it does not work in parallel
-        bc.zero_columns(A, dummy_vec, diag_value)
+    # apply bc
+    A.mat().zeroRowsColumnsLocal(bc_dofs, diag=diag_value)
 
     return A
