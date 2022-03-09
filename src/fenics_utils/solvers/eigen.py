@@ -3,17 +3,25 @@ from scipy import sparse
 from scipy.sparse import linalg
 
 from dolfin.cpp.la import SLEPcEigenSolver
+from dolfin.cpp.common import DOLFIN_EPS
 
 
 class MySLEPcEigenSolver(SLEPcEigenSolver):
 
-    def __init__(self, A, B, solver='krylov-schur',
-                 spectrum='smallest magnitude', problem_type='gen_hermitian'):
+    def __init__(self, A, B, solver='generalized-davidson',
+                 spectrum='smallest magnitude', problem_type='gen_hermitian',
+                 comm=None):
 
-        super().__init__(A, B)
+        if comm is None:
+            super().__init__(A, B)
+        else:
+            super().__init__(comm)
+            self.set_operators(A, B)
+
         self.parameters['solver'] = solver
         self.parameters['spectrum'] = spectrum
         self.parameters['problem_type'] = problem_type
+        self.parameters['tolerance'] = DOLFIN_EPS
 
     def solve(self, n_eig=5):
         super().solve(n_eig)
@@ -22,13 +30,12 @@ class MySLEPcEigenSolver(SLEPcEigenSolver):
 
 
 class ScipySparseEigenSolver:
-    '''
-    Solves generalized eigenproblem for symmetric matrices.
+    """Solves generalized eigenproblem for symmetric matrices.
 
     Notes:
         Looks to emulate behavior of SLEPcEigenSolver (goal is to use both \
     indistinctively).
-    '''
+    """
 
     def __init__(self, A, B, spectrum='smallest magnitude'):
         self.A = self._get_scipy_sparse(A)
@@ -50,8 +57,8 @@ class ScipySparseEigenSolver:
 
 
 def collect_SLEPc_eigenpairs(solver):
-    '''Returns only real part.
-    '''
+    """Returns only real part.
+    """
 
     w, v = [], []
     for i in range(solver.get_number_converged()):
