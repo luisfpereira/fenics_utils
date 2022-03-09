@@ -14,6 +14,5 @@ def formulate_laplacian(V):
 
     a = inner(grad(u_h), grad(v)) * dx
     b = inner(u_h, v) * dx
-    dummy = inner(1., v) * dx
 
-    return a, b, dummy
+    return a, b
