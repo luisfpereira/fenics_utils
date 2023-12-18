@@ -22,9 +22,8 @@ from ufl import grad
 
 
 def set_poisson_eq_2d(n=8):
-    '''
-    Basic example where only the mesh refinement is controlled.
-    '''
+    """Basic example where only the mesh refinement is controlled.
+    """
 
     # mesh
     mesh = UnitSquareMesh(n, n)
@@ -41,6 +40,7 @@ def set_poisson_eq_2d(n=8):
     bc = DirichletBC(V, u_D, boundary)
 
     # variational problem
+    # TODO: create formulation for this problem
     u = TrialFunction(V)
     v = TestFunction(V)
     f = Constant(-6.0)

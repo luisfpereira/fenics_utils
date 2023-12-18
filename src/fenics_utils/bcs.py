@@ -3,9 +3,9 @@ from dolfin.cpp.math import near
 from dolfin.cpp.common import DOLFIN_EPS
 from dolfin.fem.dirichletbc import DirichletBC
 
-from fenics_utils.mesh import get_mesh_axis_lims
-from fenics_utils.mesh import get_mesh_axis_lim
-from fenics_utils.mesh import get_mesh_axes_lims
+from fenics_utils.mesh.utils import get_mesh_axis_lims
+from fenics_utils.mesh.utils import get_mesh_axis_lim
+from fenics_utils.mesh.utils import get_mesh_axes_lims
 
 
 # ???: will this break in parallel? (while getting info from partitioned mesh)
@@ -17,6 +17,7 @@ def set_dirichlet_bc(V, x_coord, value=0., axis=0, tol=DOLFIN_EPS):
         value = Constant(value)
 
     def boundary_xmin(x, on_boundary):
+        # TODO: update name
         return on_boundary and near(x[axis], x_coord, tol)
 
     return DirichletBC(V, value, boundary_xmin)

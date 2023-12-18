@@ -2,6 +2,9 @@ import dolfin.cpp as cpp
 from dolfin.fem.assembling import assemble
 
 
+# TODO: what about symmetry preservation?
+
+
 class LinearSolver:
     """A linear solver that assembles A only once.
     """

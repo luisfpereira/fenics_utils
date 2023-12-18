@@ -10,12 +10,15 @@ from dolfin.cpp.io import XDMFFile
 from fenics_utils.utils import load_last_checkpoint
 from fenics_utils.utils import XDMFCheckpointWriter
 
+# TODO: need to be rethought (has to be a class)
+
 
 def solve_time_dependent(u_n, u, solver, dt, outputs_writer, timer,
                          stop_criterion):
 
     # TODO: return solution?
     # TODO: update objects which expression change with time (user has to tell?)
+    # TODO: what if several variables are involved?
 
     t = 0
     outputs_writer.write(u_n, t)
@@ -134,6 +137,7 @@ class StopByExtremaDiff(Criterion):
         self.max_iters = max_iters  # for protection
 
     def check(self, it, u, **kwargs):
+        # TODO: will it work properly in parallel?
         u_vec = u.vector()
         diff = u_vec.max() - u_vec.min()
         if diff <= self.min_max_diff or it == self.max_iters:
